@@ -12,6 +12,10 @@ IPT=/sbin/iptables
 SOURCED="$0"
 ALL_NETWORKS=""
 
+if [ "$2" == "debug" ]
+then
+    EZTABLES_DEBUG=1
+fi
 
 debug () {
 
@@ -20,6 +24,7 @@ debug () {
         echo "$@"
     fi
 }
+
 
 debug
 debug "============================"
@@ -31,10 +36,6 @@ then
     EZTABLES_DEBUG=0
 fi
     
-if [ ! -z "$2" ]
-then
-    EZTABLES_CONFIG="$2"
-fi
 
 if [ -z "$EZTABLES_CONFIG" ] 
 then
@@ -48,9 +49,20 @@ ipt-exec () {
     check_for_error "$?"
 }
 
+is_interface_up() {
+
+    STATE=$(cat /sys/class/net/"$1"/operstate)
+    if [ "$STATE" == "up" ]
+    then
+        return 0
+    else
+        return 1
+    fi 
+}
+
 get_ip () {
 
-    ifconfig $1 | grep "inet addr" | cut -d ":" -f 2 | awk '{ print $1 }'
+    ifconfig $x | grep "inet addr" | cut -d ":" -f 2 | awk '{ print $1 }'
 }
 
 get_mask () {
@@ -115,19 +127,32 @@ debug
 
 for x in `ifconfig -a | grep encap | awk '{ print $1}'`
 do
-    declare -A $x=$( get_ip $x )
+    if [ "$x" == "lo" ]
+    then
+        continue
+    fi
 
-    MASK=$( get_mask $x )
-    CIDR=$( mask2cidr $MASK )
-    NETWORK=$( get_network ${!x}  $MASK )
-    declare -A "$x"_net="$NETWORK/$CIDR"
+    if is_interface_up "$x"
+    then
 
-    eval FULL_NET=\$${x}_net
-    ALL_NETWORKS="$ALL_NETWORKS $FULL_NET"
+        RENAMED_INTERFACE=${x//./_}
 
-    eval tmpnetwork="\$${x}_net"
-    debug "Interface: $x | IP Address: ${!x} | Netmask: $MASK | Network: $tmpnetwork"
-    
+        declare -A $RENAMED_INTERFACE=$( get_ip $x )
+
+        MASK=$( get_mask $x )
+        CIDR=$( mask2cidr $MASK )
+        NETWORK=$( get_network ${!RENAMED_INTERFACE}  $MASK )
+
+        declare -A "$RENAMED_INTERFACE"_net="$NETWORK/$CIDR"
+
+        eval FULL_NET=\$${RENAMED_INTERFACE}_net
+        ALL_NETWORKS="$ALL_NETWORKS $FULL_NET"
+
+        eval tmpnetwork="\$${RENAMED_INTERFACE}_net"
+        debug "Interface: $x | IP Address: ${!RENAMED_INTERFACE} | Netmask: $MASK | Network: $tmpnetwork"
+    else
+        debug "Interface: $x is down."
+    fi
 done
 debug
 debug "All networks: $ALL_NETWORKS"
