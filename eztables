@@ -139,6 +139,12 @@ do
 
         declare -A $RENAMED_INTERFACE=$( get_ip $x )
 
+        if [ -z "${!RENAMED_INTERFACE}" ]
+        then
+            continue
+        fi
+        
+
         MASK=$( get_mask $x )
         CIDR=$( mask2cidr $MASK )
         NETWORK=$( get_network ${!RENAMED_INTERFACE}  $MASK )
