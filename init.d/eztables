@@ -21,14 +21,14 @@ fi
 stop_eztables () {
 
  #   echo "Stopping EZTABLES..."
-    /usr/sbin/eztables stop
+    /usr/sbin/eztables stop $1
     exit $?
 }
 
 start_eztables () {
 
 #    echo "Starting EZTABLES..."
-    /usr/sbin/eztables start
+    /usr/sbin/eztables start $1
     exit $?
 }
 
@@ -40,10 +40,10 @@ usage () {
 
 case "$1" in
     start)
-            start_eztables
+            start_eztables $2
             ;;
     stop)
-            stop_eztables
+            stop_eztables $2
             ;;
     restart)
             stop_eztables
