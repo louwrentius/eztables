@@ -49,9 +49,9 @@ then
     echo "not operate properly due to changes. Press enter to continue."
     echo "-------------------------------------------------------------------"
     read YN
-    cp "$CONFIG".example "$CONFIG_TARGET/$CONFIG.new"
+    cp "$CONFIG" "$CONFIG_TARGET/$CONFIG.new"
 else
-    cp "$CONFIG".example "$CONFIG_TARGET/$CONFIG"
+    cp "$CONFIG" "$CONFIG_TARGET/$CONFIG"
     mkdir "$PLUGINS" 
     cp plugins/*.eztables "$PLUGINS"
 fi
