@@ -1,0 +1,40 @@
+#!/bin/bash
+
+DENY_SSH_BF_PORT="$DENY_SSH_BF_PORT"
+
+if [ -z "$DENY_SSH_BF" ]
+then
+    DENY_SSH_BF="0"
+fi
+
+if [ -z "$DENY_SSH_BF_IP" ]
+then
+    DENY_SSH_BF="0"
+fi   
+
+if [ -z "$DENY_SSH_BF_PORT" ]
+then
+    DENY_SSH_BF_PORT="22"
+fi
+
+if [ -z "$DENY_SSH_WINDOW" ]
+then 
+    DENY_SSH_WINDOW="300"
+fi
+
+if [ -z "$DENY_SSH_PACKETS" ]
+then
+    DENY_SSH_PACKETS="10"
+fi
+
+plugin_status deny_ssh_bruteforce "$DENY_SSH_BF"
+
+if [ "$DENY_SSH_BF" == "1" ]
+then
+    ipt-exec -N DENY_SSH_BRUTEFORCE
+    ipt-exec -I INPUT 1 -p tcp -d "$DENY_SSH_BF_IP" --dport "$DENY_SSH_BF_PORT" -m state --state new -j DENY_SSH_BRUTEFORCE
+    ipt-exec -A "DENY_SSH_BRUTEFORCE" -m recent --set --name SSH
+    ipt-exec -A "DENY_SSH_BRUTEFORCE" -m recent --update --seconds "$DENY_SSH_WINDOW" --hitcount "$DENY_SSH_PACKETS" --name SSH -j LOG --log-level info  --log-prefix " SSH BRUTE FORCE ATTACK "
+    ipt-exec -A "DENY_SSH_BRUTEFORCE" -m recent --update --seconds "$DENY_SSH_WINDOW" --hitcount "$DENY_SSH_PACKETS" --name SSH -j DROP
+fi
+

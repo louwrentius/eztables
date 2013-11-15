@@ -1,0 +1,762 @@
+#!/usr/bin/env bash#
+#
+# EZTABLES Iptables firewall shell script.
+#
+# Copyright 2013 (c) Louwrentius
+#
+# Source code released under the BSD license.
+#
+
+VERSION=1.0
+IPT=/sbin/iptables
+SOURCED="$0"
+ALL_NETWORKS=""
+
+
+debug () {
+
+    if [ "$EZTABLES_DEBUG" == "1" ]
+    then
+        echo "$@"
+    fi
+}
+
+debug
+debug "============================"
+debug "EZTABLES firewall script $VE"
+debug "============================"
+
+if [ -z "$EZTABLES_DEBUG" ]
+then
+    EZTABLES_DEBUG=0
+fi
+    
+if [ ! -z "$2" ]
+then
+    EZTABLES_CONFIG="$2"
+fi
+
+if [ -z "$EZTABLES_CONFIG" ] 
+then
+    EZTABLES_CONFIG="/etc/eztables/eztables.cfg"
+fi
+
+ipt-exec () {
+
+    debug "$IPT $@"
+    $IPT "$@"
+    check_for_error "$?"
+}
+
+get_ip () {
+
+    ifconfig $1 | grep "inet addr" | cut -d ":" -f 2 | awk '{ print $1 }'
+}
+
+get_mask () {
+
+    ifconfig $x | grep -o "Mask:.*" | cut -d ":" -f 2
+}
+
+get_network () {
+
+    ip=$1
+    nm=$2
+      
+    ip4="${ip##*.}" ; x="${ip%.*}" 
+    ip3="${x##*.}" ; x="${x%.*}" 
+    ip2="${x##*.}" ; x="${x%.*}" 
+    ip1="${x##*.}"    
+
+    nm4="${nm##*.}" ; x="${nm%.*}" 
+    nm3="${x##*.}" ; x="${x%.*}" 
+    nm2="${x##*.}" ; x="${x%.*}" 
+    nm1="${x##*.}" 
+
+    let sn1="$ip1&$nm1" 
+    let sn2="$ip2&$nm2" 
+    let sn3="$ip3&$nm3" 
+    let sn4="$ip1&$nm4" 
+
+    subnet="$sn1.$sn2.$sn3.$sn4"
+
+    echo $subnet
+}
+
+mask2cidr() {
+    nbits=0
+    IFS=.
+    for dec in $1 ; do
+        case $dec in
+            255) let nbits+=8;;
+            254) let nbits+=7;;
+            252) let nbits+=6;;
+            248) let nbits+=5;;
+            240) let nbits+=4;;
+            224) let nbits+=3;;
+            192) let nbits+=2;;
+            128) let nbits+=1;;
+            0);;
+            *) echo "Error: $dec is not recognised"; exit 1
+        esac
+    done
+    echo "$nbits"
+}
+
+
+#
+# Create a variable name from every network interface containing it's IP.
+# Do this also for the network and cidr netmask.
+#
+
+debug
+debug "Detecting network interfaces..."
+debug
+
+for x in `ifconfig -a | grep encap | awk '{ print $1}'`
+do
+    declare -A $x=$( get_ip $x )
+
+    MASK=$( get_mask $x )
+    CIDR=$( mask2cidr $MASK )
+    NETWORK=$( get_network ${!x}  $MASK )
+    declare -A "$x"_net="$NETWORK/$CIDR"
+
+    eval FULL_NET=\$${x}_net
+    ALL_NETWORKS="$ALL_NETWORKS $FULL_NET"
+
+    eval tmpnetwork="\$${x}_net"
+    debug "Interface: $x | IP Address: ${!x} | Netmask: $MASK | Network: $tmpnetwork"
+    
+done
+debug
+debug "All networks: $ALL_NETWORKS"
+
+
+
+init () {
+
+    debug
+    debug "Init..."
+    debug
+
+    /sbin/modprobe ip_conntrack
+    /sbin/modprobe ip_conntrack_ftp
+
+    echo 1 > /proc/sys/net/ipv4/ip_forward
+    echo 1 > /proc/sys/net/ipv4/conf/all/rp_filter
+    echo 1 > /proc/sys/net/ipv4/tcp_syncookies
+
+    ipt-exec -A INPUT -i lo -j ACCEPT
+    ipt-exec -A OUTPUT -o lo -j ACCEPT
+
+    ENABLE_SYSLOG=0
+
+    DEFAULT_POLICY=DROP
+    STATE_POLICY=ESTABLISHED,RELATED
+    DENY_POLICY="$DEFAULT_POLICY"
+
+    ipt-exec -N ICMP
+    ipt-exec -N TCP_SCRUB
+    ipt-exec -N STRICT_RULES    # host/network to host/network
+    ipt-exec -N DEFAULT_DENY
+    ipt-exec -N LOOSE_RULES     # Any to host/network / any to any / host/network to any
+    ipt-exec -N DROP_PACKETS
+
+    INTERNET_INTERFACE=$(detect_internet_interface)
+
+
+    . "$EZTABLES_CONFIG"
+}
+
+plugin_status () {
+
+    PLUGIN_NAME="$1"
+    STATUS="$2"
+
+    abort_plugin_status () {
+
+       echo "Wrong argument supplied to $PLUGIN_NAME: $STATUS (1/0) ."
+       exit 1
+    }
+
+    if [ -z "$PLUGIN_NAME" ]
+    then
+        abort_plugin_status
+    fi
+
+    if [ -z "$STATUS" ]
+    then
+        abort_plugin_status
+    fi
+
+    if [ "$STATUS" == "1" ]
+    then
+        debug "Plugin $PLUGIN_NAME is enabled"
+    else
+        debug "Plugin $PLUGIN_NAME is disabled"
+    fi
+}
+
+init_plugins () {
+
+    debug
+    debug "Loading plugins..."
+    debug 
+   
+    BASE=`dirname $EZTABLES_CONFIG`
+    PLUGIN_DIR=$BASE/plugins
+
+    RES1=`find $PLUGIN_DIR -perm -o+w | wc -l`
+    RES2=`find $PLUGIN_DIR -perm -g+w | wc -l`
+
+    if [ "$RES1" == "0" ]  && [ "$RES2" == "0" ]
+    then  
+        for x in `ls -1 $PLUGIN_DIR/*.eztables`
+        do
+            . $x
+        done
+    else
+        echo 
+        echo "=============================================================================="
+        echo "SECURITY ALERT: plugin directory and/or files are writable by group or others!"
+        echo "Other users on the system could have added executable code to these files."
+        echo "Review the contents of the plugins!"
+        echo "=============================================================================="
+        echo
+        exit 1
+    fi
+}
+
+detect_internet_interface () {
+
+    netstat -rn | grep ^0.0.0.0 | grep -o -e eth[0-9]*.*[0-9]
+}
+
+set_default_policy () {
+
+    debug
+    debug "Default firewall policy..."
+    debug
+
+    if [ -z "$DEFAULT_POLICY" ]
+    then
+        DEFAULT_POLICY="DROP"
+    fi
+
+    ipt-exec -P INPUT $DEFAULT_POLICY
+    ipt-exec -P FORWARD $DEFAULT_POLICY
+    ipt-exec -P OUTPUT $DEFAULT_POLICY
+}
+
+configure_tcp_scrub () {
+
+    ipt-exec -A TCP_SCRUB -p tcp --tcp-flags SYN,ACK SYN,ACK -m state --state NEW -j DROP_PACKETS
+    ipt-exec -A TCP_SCRUB -p tcp -m state --state INVALID -j DROP_PACKETS
+    ipt-exec -A TCP_SCRUB -p tcp -m state --state INVALID -j DROP_PACKETS
+    ipt-exec -A TCP_SCRUB -p tcp ! --syn -m state --state NEW -j DROP_PACKETS
+    ipt-exec -A TCP_SCRUB -p tcp ! --syn -m state --state NEW -j DROP_PACKETS
+}
+
+init_main_firewall () {
+
+    debug
+    debug "Setup basic firwall chains..."
+    debug
+
+    ipt-exec -A FORWARD -j TCP_SCRUB
+    ipt-exec -A FORWARD -j ICMP
+    ipt-exec -A FORWARD -j STRICT_RULES
+    ipt-exec -A FORWARD -j DEFAULT_DENY
+    ipt-exec -A FORWARD -j LOOSE_RULES
+
+    ipt-exec -A INPUT -j TCP_SCRUB
+    ipt-exec -A INPUT -j ICMP
+
+    ipt-exec -A OUTPUT -j TCP_SCRUB
+    ipt-exec -A OUTPUT -j ICMP
+
+    ipt-exec -A INPUT -m state --state $STATE_POLICY -j ACCEPT
+    ipt-exec -A OUTPUT -m state --state $STATE_POLICY -j ACCEPT
+    ipt-exec -A FORWARD -m state --state $STATE_POLICY -j ACCEPT
+    ipt-exec -A DEFAULT_DENY -m state --state $STATE_POLICY -j ACCEPT
+    ipt-exec -A LOOSE_RULES -m state --state $STATE_POLICY -j ACCEPT
+    ipt-exec -A STRICT_RULES -m state --state $STATE_POLICY -j ACCEPT
+}
+
+convert_any_to_port_range () {
+
+    #
+    # Any is shorthand for 1:65535 or all ports.
+    # 
+
+    PORT="$1"
+    if [ "$PORT" == "any" ] || [ "$PORT" == "ANY" ]
+    then
+        echo "1:65535"
+    else
+        echo "$PORT"
+    fi
+}
+
+convert_any_to_ip () {
+
+    #
+    # Any is shorthand for 0.0.0.0/24
+    #
+
+    IP="$1"
+    if [ "$IP" == "any" ] || [ "$IP" == "ANY" ]
+    then
+        echo "0.0.0.0/0"
+    else
+        echo "$IP"
+    fi
+}
+
+deny_all_local_networks () {
+
+    #
+    # By default, make sure that none of the networks
+    # attached to the machine can talk to each other.
+    #
+
+    debug
+    debug "Protect local networks from each other..."
+    debug
+
+    if [ -z "$ALL_NETWORKS" ]
+    then
+        echo "Warning: if you have defined multiple networks, you should set ALL_NETWORKS."
+    else
+        for SRC_NETWORK in $ALL_NETWORKS
+        do
+            for DEST_NETWORK in $ALL_NETWORKS
+            do
+                if [ ! "$SRC_NETWORK" == "$DEST_NETWORK" ]
+                then
+                    deny_forward "$SRC_NETWORK" "$DEST_NETWORK" any any
+                fi
+            done
+        done
+    fi
+    debug
+}
+
+error () {
+
+    INPUT="$@"
+
+        echo  "****************************************************************************************"
+        echo  "WARNING: An error occurred, see explanation for details, if any."
+        echo  "****************************************************************************************"
+        if [ ! -z "$INPUT" ]
+        then 
+            echo  "REASON: $INPUT" 
+        else
+            echo "No reason provided. Possible configuration file syntax error?"
+        fi
+        echo  "****************************************************************************************"
+        stop_firewall
+        exit 1
+}
+
+nat () {
+
+    INTERNAL_OBJECTS="$1"
+    EXTERNAL_IP="$2"
+    INTERFACE="$3"
+
+    if [ -z "$INTERFACE" ]
+    then
+        if [ ! -z "$INTERNET_INTERFACE" ]
+        then 
+            INTERFACE="$INTERNET_INTERFACE"
+        else
+            error "No NAT interface provided and INTERNET_INTERFACE not set."
+        fi
+    fi
+    
+    for SOURCE in $INTERNAL_OBJECTS
+    do
+        if [ "$DYNAMIC_IP" == "yes" ]
+        then
+            ipt-exec -t nat -A POSTROUTING -s "$SOURCE" -o "$INTERFACE" -j MASQUERADE
+        else
+            ipt-exec -t nat -A POSTROUTING -s "$SOURCE" -o "$INTERFACE" -j SNAT --to "$EXTERNAL_IP"
+        fi
+    done
+}
+
+check_for_error () {
+
+    ERROR="$1"
+    MSG="$2"
+
+    if [ ! "$ERROR" == "0" ]
+    then
+        error "$MSG" 
+    fi
+}
+
+convert_port_range_to_dash () {
+
+    PORT_RANGE="$1"
+    PORT_RANGE=`echo "$PORT_RANGE" | sed s/:/-/g`
+    echo "$PORT_RANGE"
+}
+
+convert_port_range_to_colon () {
+
+    PORT_RANGE="$1"
+    PORT_RANGE=`echo "$PORT_RANGE" | sed s/-/:/g`
+    echo "$PORT_RANGE"
+}
+
+port_forward () {
+
+    EXT_IP="$1"
+    INT_IP="$2"
+    EXT_PORTS="$3"
+    INT_PORT="$4"
+
+    for EXTERNAL_PORT in $EXT_PORTS
+    do
+        PROTOCOL=`parse_port "$EXTERNAL_PORT" protocol`
+        EXT_PORT_PARSED=`parse_port "$EXTERNAL_PORT" port`
+
+        if [ -z "$INT_PORT" ]
+        then
+            INTERNAL_PORT=`convert_port_range_to_dash "$EXT_PORT_PARSED"`
+        else 
+            INTERNAL_PORT_PARSED=`parse_port "$INT_PORT" port`
+            INTERNAL_PORT=`convert_port_range_to_dash "$INTERNAL_PORT_PARSED"`
+        fi
+
+        ipt-exec -t nat -A PREROUTING -p "$PROTOCOL" -d "$EXT_IP" --dport "$EXT_PORT_PARSED" -j DNAT --to "$INT_IP":"$INTERNAL_PORT"
+
+        CONVERTED_INTERNAL_PORT=`convert_port_range_to_colon "$INTERNAL_PORT"`
+        allow_forward any "$INT_IP" any "$CONVERTED_INTERNAL_PORT/$PROTOCOL"
+    done
+}
+
+get_protocol () {
+
+    SRC_PORT="$1"
+    DST_PORT="$2"
+
+    SRC_PROTOCOL=`parse_port "$SRC_PORT" protocol`
+    DST_PROTOCOL=`parse_port "$DST_PORT" protocol`
+
+    if [ -z "$SRC_PROTOCOL" ] && [ -z "$DST_PROTOCOL" ]
+    then
+        error "ERROR: source and destination protocol are not specified"
+    fi
+
+    if [ "$SRC_PROTOCOL" == "tcp" ] && [ "$DST_PROTOCOL" == "udp" ]
+    then
+        echo different
+        break
+    fi
+
+    if [ "$SRC_PROTOCOL" == "udp" ] && [ "$DST_PROTOCOL" == "tcp" ]
+    then
+        echo different
+        break
+    fi
+
+    if [ "$SRC_PROTOCOL" == "tcp" ] || [ "$DST_PROTOCOL" == "tcp" ]
+    then
+        echo tcp
+    elif [ "$SRC_PROTOCOL" == "udp" ] || [ "$DST_PROTOCOL" == "udp" ]
+    then
+        echo udp
+    elif [ "$SRC_PORT" == "any" ] && [ "$DST_PORT" == "any" ]
+    then
+        echo "tcp udp"
+    fi
+}
+
+execute-firewall () {
+
+    SOURCE="$1"
+    DESTINATION="$2"
+    SOURCE_PORT="$3"
+    DESTINATION_PORT="$4"
+    PROTOCOL="$5"
+    POLICY="$6"
+    CHAIN="$7"
+
+    ipt-exec -A "$CHAIN" -p "$PROTOCOL" -s "$SOURCE" -d "$DESTINATION" --sport "$SOURCE_PORT" --dport "$DESTINATION_PORT" -m state --state NEW -j "$POLICY"
+}
+
+process_object_groups () {
+
+    SOURCES="$1"
+    DESTINATIONS="$2"
+    SOURCE_PORTS="$3"
+    DESTINATION_PORTS="$4"
+    PROTOCOL=""
+    CHAIN="$5"
+    POLICY="$6"
+
+    for SOURCE in $SOURCES
+    do
+        SOURCE=`convert_any_to_ip "$SOURCE"`
+        for DESTINATION in $DESTINATIONS
+        do
+            DESTINATION=`convert_any_to_ip "$DESTINATION"`
+            for SOURCE_PORT in $SOURCE_PORTS
+            do
+                for DEST_PORT in $DESTINATION_PORTS
+                do
+                    PROTOCOLS=`get_protocol "$SOURCE_PORT" "$DEST_PORT"`
+                    if [ ! "$PROTOCOLS" == "different" ]
+                    then
+                        SOURCE_PORT=`parse_port "$SOURCE_PORT" port`
+                        DEST_PORT=`parse_port "$DEST_PORT" port`
+
+                        
+                        for PROTOCOL in $PROTOCOLS
+                        do
+                            execute-firewall "$SOURCE" "$DESTINATION" "$SOURCE_PORT" "$DEST_PORT" "$PROTOCOL" "$POLICY" "$CHAIN"
+                        done
+                    fi
+                done
+            done
+        done
+    done
+
+}
+
+process_traffic () {
+
+    SOURCES="$1"
+    DESTINATIONS="$2"
+    SOURCE_PORTS="$3"
+    DESTINATION_PORTS="$4"
+    CHAIN="$5"    
+    POLICY="$6"
+
+    process_object_groups "$SOURCES" "$DESTINATIONS" "$SOURCE_PORTS" "$DESTINATION_PORTS" "$CHAIN" "$POLICY"
+}
+
+allow_in () {
+
+    process_traffic "$@" INPUT ACCEPT
+}
+
+allow_out () {
+
+    process_traffic "$@" OUTPUT ACCEPT
+}
+
+allow_forward () {
+
+    SRC="$1"
+    DST="$2"
+    CHAIN=""
+
+    if [ "$SRC" == any ] || [ "$DST" == any ]
+    then
+        CHAIN="LOOSE_RULES"
+    else
+        CHAIN="STRICT_RULES"
+    fi
+    
+    process_traffic "$@" "$CHAIN" ACCEPT
+}
+
+deny_in () {
+
+    process_traffic "$@" INPUT "$DENY_POLICY"
+}
+
+deny_out () {
+
+    process_traffic "$@" OUTPUT "$DENY_POLICY"
+}
+
+deny_forward () {
+
+    process_traffic "$@" DEFAULT_DENY "$DENY_POLICY"
+}
+
+allow_icmp () {
+
+    SRC="$1"
+    DST="$2"
+
+    if [ -z "$ICMP_TYPES" ]
+    then
+        ICMP_TYPES="
+            echo-request
+            echo-reply
+            destination-unreachable
+        "
+    fi
+
+    for source in $SRC
+    do
+        host=`convert_any_to_ip "$source"`
+        for dest in $DST
+        do
+            dest=`convert_any_to_ip "$dest"`
+            for parameter in $ICMP_TYPES
+            do 
+                ipt-exec -A ICMP -p icmp -s "$host" -d "$dest" --icmp-type "$parameter" -j ACCEPT
+            done
+        done
+    done
+}
+
+block_everything_else () {
+    
+    if [ "$ENABLE_SYSLOG" == "1" ]
+    then
+        ipt-exec -A INPUT -j DROP_PACKETS
+        ipt-exec -A FORWARD -j DROP_PACKETS
+        ipt-exec -A OUTPUT -j DROP_PACKETS
+
+        ipt-exec -A DROP_PACKETS -p all -j LOG --log-prefix " * BLOCKING * " 
+    fi
+    ipt-exec -A DROP_PACKETS -j DROP
+}
+
+run_checks () {
+
+    if [ ! -e "$IPT" ]
+    then
+        error "$IPT executable not present at ipt-exec please provide correct location."
+    fi
+
+    if [ ! -e "$EZTABLES_CONFIG" ]
+    then
+        error "Ruleset "$EZTABLES_CONFIG" not found."
+    fi
+}
+
+parse_port () {
+
+    INPUT="$1"
+    PART="$2"
+
+    if [ "$PART" == "port" ]
+    then
+        PART=1
+    elif [ "$PART" == "protocol" ]
+    then
+        PART=2
+    else
+        error "$FUNCNAME Error, provide port/protocol as second argument" 
+    fi
+
+    RESULT=`echo "$INPUT" | cut -d "/" -f "$PART"`
+
+    if [ "$PART" == "1" ] && [ -z "$RESULT" ] 
+    then
+        error "Rule contains incorrect port value."
+    elif [ "$PART" == "2" ] && [ -z "$RESULT" ]
+    then
+        RESULT="all"
+    fi
+    if [ "$RESULT" == "any" ] || [ "$RESULT" == "ANY" ] && [ "$PART" == "2" ]  
+    then
+        RESULT="all"
+    fi
+
+    RESULT=`convert_any_to_port_range "$RESULT"`
+
+    echo "$RESULT"
+}
+
+stop_firewall () {
+
+
+    debug
+    debug "Flusing iptables ruleset.."
+    debug
+    
+
+    ipt-exec -F
+    ipt-exec -F -t nat
+    ipt-exec -X
+    ipt-exec -P INPUT ACCEPT
+    ipt-exec -P OUTPUT ACCEPT
+    ipt-exec -P FORWARD DROP
+    ipt-exec -F -t mangle
+}
+
+check_insecure_configuration () {
+
+    debug
+    if [ "$DEFAULT_POLICY" == "ACCEPT" ]
+    then
+        echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+        echo "!!! SECURITY RISK - WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+        echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+        echo 
+        echo "DEEFAULT FIREWALL POLICY IS ACCEPT."
+        echo 
+        echo "ONLY TO BE USED FOR INITIAL TESTING PURPOSES."
+        echo
+        echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+        echo "!!! SECURITY RISK - WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+        echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+    fi
+}
+
+start_firewall () {
+
+    run_checks
+    stop_firewall
+    init
+    init_plugins
+    check_insecure_configuration
+    configure_tcp_scrub
+    deny_all_local_networks
+    set_default_policy
+    init_main_firewall
+    block_everything_else 
+}
+
+main () {
+
+    if [ "$1" == "start" ]
+    then
+        echo "Starting ezfirewall..."
+        start_firewall
+
+    elif [ "$1" == "stop" ]
+    then
+        echo "Stopping ezfirewall..."
+        stop_firewall
+        exit 0
+    elif [ "$1" == "version" ]
+    then
+        echo "EZTABLES version $VERSION"
+        exit 0
+    else
+        echo "Usage: $0 (start/stop)"
+        exit 1
+    fi
+}
+
+are_we_sourced () {
+
+    RES=`basename $SOURCED`
+    
+    if [ "$RES" = "eztables" ]
+    then
+        return 1
+    else
+        return 0
+    fi 
+}
+
+if ! are_we_sourced
+then
+    main "$1"
+fi
+
+debug

@@ -1,0 +1,57 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          EZTABLES
+# Required-Start:    
+# Required-Stop:     
+# Default-Start:     2 3 4 5 S
+# Default-Stop:      0 1 6
+# Short-Description: Linux Iptables Firewall Script
+# Description:       EZTABLES allows you to setup a complex firewall
+#                    based on IPtables with a few easy rules.
+### END INIT INFO
+
+CONFIG=/etc/eztables/eztables.cfg
+
+if [ ! -e "$CONFIG" ]
+then
+    echo "Config $CONFIG not found."
+    exit 1
+fi
+
+stop_eztables () {
+
+ #   echo "Stopping EZTABLES..."
+    /usr/sbin/eztables stop
+    exit $?
+}
+
+start_eztables () {
+
+#    echo "Starting EZTABLES..."
+    /usr/sbin/eztables start
+    exit $?
+}
+
+usage () {
+
+    echo "Usage: $0 [ start | stop | restart ] "
+}
+
+
+case "$1" in
+    start)
+            start_eztables
+            ;;
+    stop)
+            stop_eztables
+            ;;
+    restart)
+            stop_eztables
+            start_eztables
+            ;;
+    *)
+            usage
+            ;;
+esac 
+
+
