@@ -2,12 +2,12 @@
 
 Eztables allows you to define firewall rules on Linux that are easy to understand and simple to manage. It uses iptables so you don't have to.
 
-Eztables is designed to be simple, yet powerful. It does not matter if you are setting up a home router, or use it to setup a corporate firewall. Eztables supports:
+Eztables is designed to be simple, yet powerful. It doesn't matter if you are setting up a home router, or use it to setup a corporate firewall. Eztables supports:
 
 * Basic input / output filtering
 * Network address translation (NAT)
 * Port address translation 
-* Service and host groups
+* Service and host groups / objects
 * Logging to syslog
 * Support for plugins
 * Automatically detects all network interfaces
@@ -16,7 +16,7 @@ Eztables is designed to be simple, yet powerful. It does not matter if you are s
 
 With these two configuration lines, we will setup a working home router. 
 
-```
+```sh
     nat $eth1_net $eth0
     allow_forward $eth1_net any any any
 ```
@@ -25,7 +25,7 @@ That's easy right? It can be just two lines because Eztables can detect all inte
 
 This rule will allow SSH access to this router/firewall.
 
-```
+```sh
     allow_in $eth1_net $eth1 any 22/tcp
 ```
 
@@ -38,7 +38,7 @@ on all commercial firewall products.
 
 Working with objects and groups allows you to keep your firewall ruleset small and simple. Let's take a look at the use of objects and groups.
 
-```
+```sh
     HTTP_SERVICES="
         80/tcp
        443/tcp
@@ -62,8 +62,14 @@ true: the ezfirewall configuration stays the same, only under the hood will ezta
 
 This is the basic syntax for every firewall rule:
 
-```
+```sh
     allow_in <source host(s)> <destination host(s)> <source port(s)> <destination port(s)>
 ```
 
 There are also additiional commands such as allow_out, deny_in and deny_out. See the manual for more detailed instructions.
+
+## Roadmap
+
+- Traffic shaping plugin
+- IPv6 support
+- Support for multi-homed networks
