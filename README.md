@@ -1,12 +1,13 @@
 # eztables is easy firewalling
 
-Eztables allows you to define firewall rules on Linux that are easy to understand and simple to manage. It uses iptables so you don't have to.
+Eztables allows you to setup a Linux firewall that are easy to understand and simple to manage. It uses iptables so you don't have to.
 
 Eztables is designed to be simple, yet powerful. It doesn't matter if you are setting up a home router, or use it to setup a corporate firewall. Eztables supports:
 
 * Basic input / output filtering
 * Network address translation (NAT)
 * Port address translation 
+* Support for vlans
 * Service and host groups / objects
 * Logging to syslog
 * Support for plugins
@@ -14,14 +15,14 @@ Eztables is designed to be simple, yet powerful. It doesn't matter if you are se
 
 ## Example: home network 
 
-With these two configuration lines, we will setup a working home router. 
+With these two configuration lines, you can setup a functional home router. 
 
 ```sh
     nat $eth1_net $eth0
     allow_forward $eth1_net any any any
 ```
 
-That's easy right? It can be just two lines because Eztables can detect all interfaces and which one is used for internet access.
+That's easy right? It's just two lines because Eztables can detect all network interfaces also determine which one is connected to the internet (eth0).
 
 This rule will allow SSH access to this router/firewall.
 
@@ -29,7 +30,7 @@ This rule will allow SSH access to this router/firewall.
     allow_in $eth1_net $eth1 any 22/tcp
 ```
 
-Note that SSH access is only granted from within the local network.
+Note that SSH access is only granted from within the local network connected to the eth1 interface..
 
 ## Using groups for hosts and services
 
@@ -67,6 +68,22 @@ This is the basic syntax for every firewall rule:
 ```
 
 There are also additiional commands such as allow_out, deny_in and deny_out. See the manual for more detailed instructions.
+
+## Installation
+
+Run the install.sh file like:
+
+    bash install.sh
+
+After that, review the configuration file: /etc/eztables/eztables.cfg
+
+Start the firewall like this:
+
+    /etc/init.d/eztables start
+
+Be carefull not to lock yourself out if you test your rules.
+
+    /etc/init.d/eztables start && sleep 30 && /etc/init.d/eztables stop
 
 ## Roadmap
 
