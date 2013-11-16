@@ -67,6 +67,8 @@ This is the basic syntax for every firewall rule:
     allow_in <source host(s)> <destination host(s)> <source port(s)> <destination port(s)>
 ```
 
+![overview](http://louwrentius.com/static/images/eztables-rules.png)
+
 There are also additiional commands such as allow_out, deny_in and deny_out. See the manual for more detailed instructions.
 
 ## Installation
