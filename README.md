@@ -38,7 +38,7 @@ With these two configuration lines, you can setup a functional home router.
     allow_forward $eth1_net any any any
 ```
 
-That's easy right? It's just two lines because Eztables can detect all network interfaces also determine which one is connected to the internet (eth0).
+That's easy right? It's just two lines because Eztables can detect all network interfacesalso determine which one is connected to the internet (eth0).
 
 This rule will allow SSH access to this router/firewall.
 
@@ -48,6 +48,7 @@ This rule will allow SSH access to this router/firewall.
 
 Note that SSH access is only granted from within the local network connected to the eth1 interface..
 
+<<<<<<< HEAD
 If you also run a DHCP-server on this box, you need to allow clients acces with these rules:
 
 ```sh
