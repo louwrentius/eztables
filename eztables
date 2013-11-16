@@ -684,8 +684,6 @@ parse_port () {
 
     RESULT=`echo "$INPUT" | cut -d "/" -f "$PART"`
     
-    echo "$RESULT" >> /tmp/port.txt
-
     if [ "$PART" == "1" ] && [ -z "$RESULT" ] 
     then
         error "Rule contains incorrect port value."
