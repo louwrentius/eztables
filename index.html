@@ -31,20 +31,20 @@
     <!-- MAIN CONTENT -->
     <div id="main_content_wrap" class="outer">
       <section id="main_content" class="inner">
-        <h1>
-<a name="eztables" class="anchor" href="#eztables"><span class="octicon octicon-link"></span></a>Eztables</h1>
+        <h2>
+<a name="eztables-simple-yet-powerful-firewall-configuration-for-linux" class="anchor" href="#eztables-simple-yet-powerful-firewall-configuration-for-linux"><span class="octicon octicon-link"></span></a>Eztables: simple yet powerful firewall configuration for Linux</h2>
 
 <p>Eztables allows you to quickly configure a firewall without ever touching iptables. The firewall rule syntax is designed to be easy to read and to apply.  </p>
 
-<p>This is how you allow the entire internet to access your webserver on tcp-port 80:</p>
+<p>This is how you allow the entire internet to access your webserver on TCP-port 80:</p>
 
 <div class="highlight highlight-sh"><pre>    allow_in any <span class="nv">$eth0</span> any 80/tcp
 </pre></div>
 
 <p>Eztables is designed to be simple, yet powerful. It doesn't matter if you want to protect your laptop, are setting up a home router, or use it to setup a corporate firewall. </p>
 
-<h1>
-<a name="features" class="anchor" href="#features"><span class="octicon octicon-link"></span></a>Features</h1>
+<h2>
+<a name="features" class="anchor" href="#features"><span class="octicon octicon-link"></span></a>Features</h2>
 
 <ul>
 <li>Basic input / output filtering</li>
@@ -55,8 +55,8 @@
 <li>Logging to syslog</li>
 <li>Support for plugins</li>
 <li>Automatically detects all network interfaces</li>
-</ul><h1>
-<a name="why-should-i-consider-using-eztables" class="anchor" href="#why-should-i-consider-using-eztables"><span class="octicon octicon-link"></span></a>Why should I consider using Eztables?</h1>
+</ul><h2>
+<a name="why-should-i-consider-using-eztables" class="anchor" href="#why-should-i-consider-using-eztables"><span class="octicon octicon-link"></span></a>Why should I consider using Eztables?</h2>
 
 <p>Eztables has it's own firewall rule syntax that is significantly simpler than using iptables directly. A tool like <a href="https://help.ubuntu.com/community/UFW">UFW</a> was made with a similar mindset, but it is more host-centric. It was never designed to be used as a general-purpose firewall script.</p>
 
@@ -64,8 +64,8 @@
 
 <p>Eztables has support for advanced features like NAT and port-forwarding. But one of the most powerfull features is support for object groups, as found in most commercial firewalls and routers. Object groups are cool because they allow you to group hosts in 'objects' and refer to those objects in your rules. This allows you to keep the number of firewall rules relatively small and comprehensible.</p>
 
-<h1>
-<a name="example-basic-network" class="anchor" href="#example-basic-network"><span class="octicon octicon-link"></span></a>Example: basic network</h1>
+<h2>
+<a name="example-basic-network" class="anchor" href="#example-basic-network"><span class="octicon octicon-link"></span></a>Example: basic network</h2>
 
 <p>With these two configuration lines, you can setup a functional home router. </p>
 
@@ -73,19 +73,19 @@
     allow_forward <span class="nv">$eth1_net</span> any any any
 </pre></div>
 
-<p>That's easy right? It's just two lines because Eztables can detect all network interfacesalso determine which one is connected to the internet (eth0).</p>
+<p>That's easy right? It's just two lines because Eztables can detect all network interfaces and it can also figure out which interface is connected to the internet (eth0).</p>
 
 <p>This rule will allow SSH access to this router/firewall.</p>
 
 <div class="highlight highlight-sh"><pre>    allow_in <span class="nv">$eth1_net</span> <span class="nv">$eth1</span> any 22/tcp
 </pre></div>
 
-<p>Note that SSH access is only granted from within the local network connected to the eth1 interface..</p>
+<p>Note that SSH access is only granted from within the local network connected to the eth1 interface.</p>
 
 <p>If you also run a DHCP-server on this box, you need to allow clients acces with these rules:</p>
 
-<div class="highlight highlight-sh"><pre>    allow_in any <span class="nv">$eth1</span> any <span class="nv">$DHCP</span><span class="s2">" "</span><span class="nv">$DHCP</span><span class="s2">"</span>
-<span class="s2">    allow_out "</span><span class="nv">$eth1</span><span class="s2">" any "</span><span class="nv">$DHCP</span><span class="s2">" "</span><span class="nv">$DHCP</span><span class="err">"</span>
+<div class="highlight highlight-sh"><pre>    allow_in any <span class="nv">$eth1</span> <span class="s2">"$DHCP"</span> <span class="s2">"$DHCP"</span>
+    allow_out <span class="nv">$eth1</span> any <span class="s2">"$DHCP"</span> <span class="s2">"$DHCP"</span>
 </pre></div>
 
 <p>The "$DHCP" variable should look like this:</p>
