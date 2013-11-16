@@ -25,7 +25,7 @@ Eztables is designed to be simple, yet powerful. It doesn't matter if you want t
 
 Eztables has it's own firewall rule syntax that is significantly simpler than using iptables directly. A tool like [UFW](https://help.ubuntu.com/community/UFW) was made with a similar mindset, but it is more host-centric. It was never designed to be used as a general-purpose firewall script.
 
-Eztables on the other hand, can be used on any Linux bos, wether it's a desktop, server or network firewall. 
+Eztables on the other hand, can be used on any Linux box, wether it's a desktop, (virtual) server or network firewall. 
  
 Eztables has support for advanced features like NAT and port-forwarding. But one of the most powerfull features is support for object groups, as found in most commercial firewalls and routers. Object groups are cool because they allow you to group hosts in 'objects' and refer to those objects in your rules. This allows you to keep the number of firewall rules relatively small and comprehensible.
 
