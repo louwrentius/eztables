@@ -1,6 +1,6 @@
 # eztables is easy firewalling
 
-Eztables allows you to setup a Linux firewall that are easy to understand and simple to manage. It uses iptables so you don't have to.
+Eztables allows you to setup a Linux firewall that is easy to understand and maintain. It uses iptables so you don't have to. 
 
 Eztables is designed to be simple, yet powerful. It doesn't matter if you are setting up a home router, or use it to setup a corporate firewall. Eztables supports:
 
