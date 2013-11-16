@@ -51,7 +51,7 @@ Note that SSH access is only granted from within the local network connected to 
 If you also run a DHCP-server on this box, you need to allow clients acces with these rules:
 
 ```sh
-	allow_in any $eth1 any $DHCP" "$DHCP"
+	allow_in any $eth1 any "$DHCP" "$DHCP"
 	allow_out $eth1 any "$DHCP" "$DHCP"
 ```
 
