@@ -2,7 +2,6 @@
 
 == Home network with port-forwarding and NAT
 
-#!/bin/bash
 ENABLE_SYSLOG=1
 
 #
