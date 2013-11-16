@@ -755,12 +755,12 @@ main () {
 
     if [ "$1" == "start" ]
     then
-        echo "Starting ezfirewall..."
+        echo "Starting eztables..."
         start_firewall
 
     elif [ "$1" == "stop" ]
     then
-        echo "Stopping ezfirewall..."
+        echo "Stopping eztables..."
         stop_firewall
         exit 0
     elif [ "$1" == "version" ]
