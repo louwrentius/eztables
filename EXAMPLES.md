@@ -1,7 +1,7 @@
-= Configuration examples
+# Configuration examples 
 
-== Home network with port-forwarding and NAT
-
+## Home network with port-forwarding and NAT
+```sh
 ENABLE_SYSLOG=1
 
 #
@@ -103,3 +103,4 @@ port_forward "$eth0" "$WEBSERVER" 80/tcp
 # redirect the port as well:
 #
 port_forward "$eth0" "$WEBSERVER" 80/tcp 8080/tcp
+```
