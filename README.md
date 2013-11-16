@@ -32,6 +32,12 @@ This rule will allow SSH access to this router/firewall.
 
 Note that SSH access is only granted from within the local network connected to the eth1 interface..
 
+## Automatic network interface detection
+
+Eztables identifies all network interfaces and associated networks on startup. It also generates variables 
+based on the detected interfaces so you don't have to define them yourself. Examples are $ethx for the IP-address of 
+the interface and $ethx_net to refer to the network associated to the interface.
+
 ## Using groups for hosts and services
 
 A main advantage of Eztables over other solutions is the possibility to define and use groups or objects. This is a feature commonly found
