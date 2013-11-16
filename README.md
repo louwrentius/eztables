@@ -23,7 +23,7 @@ Eztables is designed to be simple, yet powerful. It doesn't matter if you want t
 
 # Why should I consider using Eztables?
 
-Eztables has it's own firewall rule syntax that is significantly simpler than using iptables directly. A tool like [UFW][https://help.ubuntu.com/community/UFW] was made with a similar mindset, but it is more host-centric. It was never designed to be used as a general-purpose firewall script.
+Eztables has it's own firewall rule syntax that is significantly simpler than using iptables directly. A tool like [UFW](https://help.ubuntu.com/community/UFW) was made with a similar mindset, but it is more host-centric. It was never designed to be used as a general-purpose firewall script.
 
 Ezfirwall on the other hand, can be used on any Linux bos, wether it's a desktop, server or network firewall. 
  
@@ -48,7 +48,6 @@ This rule will allow SSH access to this router/firewall.
 
 Note that SSH access is only granted from within the local network connected to the eth1 interface..
 
-<<<<<<< HEAD
 If you also run a DHCP-server on this box, you need to allow clients acces with these rules:
 
 ```sh
@@ -65,7 +64,7 @@ The "$DHCP" variable should look like this:
 	"
 ```
 
-You may have to setup additional rules if you run a local DNS server or a [proxy server][http://louwrentius.com/setting-up-a-squid-proxy-with-clamav-anti-virus-using-c-icap.html]
+You may have to setup additional rules if you run a local DNS server or a [proxy server](http://louwrentius.com/setting-up-a-squid-proxy-with-clamav-anti-virus-using-c-icap.html)
 
 ## Working with object groups
 
