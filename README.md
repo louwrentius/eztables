@@ -2,7 +2,7 @@
 
 Eztables allows you to quickly configure a firewall without ever touching iptables. The firewall rule syntax is designed to be easy to read and to apply.  
 
-This is how you allow the entire internet to access your webserver on tcp-port 80:
+This is how you allow the entire internet to access your webserver on TCP-port 80:
 
 ```sh
 	allow_in any $eth0 any 80/tcp
@@ -38,7 +38,7 @@ With these two configuration lines, you can setup a functional home router.
     allow_forward $eth1_net any any any
 ```
 
-That's easy right? It's just two lines because Eztables can detect all network interfacesalso determine which one is connected to the internet (eth0).
+That's easy right? It's just two lines because Eztables can detect all network interfaces and it can also figure out which interface is connected to the internet (eth0).
 
 This rule will allow SSH access to this router/firewall.
 
@@ -46,13 +46,13 @@ This rule will allow SSH access to this router/firewall.
     allow_in $eth1_net $eth1 any 22/tcp
 ```
 
-Note that SSH access is only granted from within the local network connected to the eth1 interface..
+Note that SSH access is only granted from within the local network connected to the eth1 interface.
 
 If you also run a DHCP-server on this box, you need to allow clients acces with these rules:
 
 ```sh
 	allow_in any $eth1 any $DHCP" "$DHCP"
-	allow_out "$eth1" any "$DHCP" "$DHCP"
+	allow_out $eth1 any "$DHCP" "$DHCP"
 ```
 
 The "$DHCP" variable should look like this:
