@@ -22,7 +22,7 @@ With these two configuration lines, you can setup a functional home router.
     allow_forward $eth1_net any any any
 ```
 
-That's easy right? It's just two lines because Eztables can detect all network interfaces also determine which one is connected to the internet (eth0).
+That's easy right? It's just two lines because Eztables can detect all network interfacesalso determine which one is connected to the internet (eth0).
 
 This rule will allow SSH access to this router/firewall.
 
@@ -35,8 +35,8 @@ Note that SSH access is only granted from within the local network connected to 
 ## Automatic network interface detection
 
 Eztables identifies all network interfaces and associated networks on startup. It also generates variables 
-based on the detected interfaces so you don't have to define them yourself. Examples are $ethx for the IP-address of 
-the interface and $ethx_net to refer to the network associated to the interface.
+based on the detected interfaces so you don't have to define them yourself. You just witnessed how these generated
+variables are used.
 
 ## Using groups for hosts and services
 
