@@ -8,7 +8,7 @@ This is how you allow the entire internet to access your webserver on TCP-port 8
 	allow_in any $eth0 any 80/tcp
 ``` 
 
-Eztables is designed to be simple, yet powerful. It doesn't matter if you want to protect your laptop, are setting up a home router, or use it to setup a corporate firewall. 
+Eztables is designed to be simple, yet powerful. It doesn't matter if you want to protect your laptop, are setting up a home router, or building a company firewall. 
 
 # Features
 
@@ -64,7 +64,7 @@ The "$DHCP" variable should look like this:
 	"
 ```
 
-You may have to setup additional rules if you run a local DNS server or a [proxy server](http://louwrentius.com/setting-up-a-squid-proxy-with-clamav-anti-virus-using-c-icap.html)
+You may have to setup additional rules if you run a local DNS server or a [proxy server](http://louwrentius.com/setting-up-a-squid-proxy-with-clamav-anti-virus-using-c-icap.html).
 
 ## Working with object groups
 
