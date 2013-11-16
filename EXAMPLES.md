@@ -46,6 +46,12 @@ NTP="
     123/udp
 "
 
+DHCP="
+   
+    67/udp
+    68/udp
+"
+
 MAIL="
 
   25/tcp
@@ -79,9 +85,16 @@ allow_in $eth1_net $eth1 any "$SSH"
 allow_in $eth1_net $eth1 any "$BASIC_SERVICES" 
 
 #
+# Required if you run DHCP
+#
+allow_in any $eth1 any "$DHCP"
+allow_out $eth1 any "$DHCP" "$DHCP"
+
+#
 # Allow the router/firewall to initiate connections to services on the Internet.
 #
 allow_out $eth0 any any "$BASIC_SERVICES" 
+
 
 #
 # Basic NAT for the internal network connected to eth1. 
