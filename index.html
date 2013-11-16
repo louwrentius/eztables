@@ -31,7 +31,49 @@
     <!-- MAIN CONTENT -->
     <div id="main_content_wrap" class="outer">
       <section id="main_content" class="inner">
-        <p>Eztables allows you to setup a firewall on a Linux system with human-friendly rules. Eztables manages the iptables rules for you, so you don't have to. </p>
+        <h1>
+<a name="what-is-eztables" class="anchor" href="#what-is-eztables"><span class="octicon octicon-link"></span></a>What is Eztables?</h1>
+
+<p>Eztables allows you to setup a firewall on a Linux system with human-friendly rules. Eztables manages the iptables rules for you, so you don't have to. The rules you have to write, are in a human-friendly, easy to understand format.</p>
+
+<h1>
+<a name="example" class="anchor" href="#example"><span class="octicon octicon-link"></span></a>Example</h1>
+
+<p>Just take a look at this example of a simple home or small-business networking setup:</p>
+
+<div class="highlight highlight-sh"><pre>    nat <span class="nv">$eth1_net</span> <span class="nv">$eth0</span>
+    allow_forward <span class="nv">$eth1_net</span> any any any
+    allow_in <span class="nv">$eth1_net</span> <span class="nv">$eth1</span> any 22/tcp
+</pre></div>
+
+<p>You probably can figure out with ease what these rules do. The first one sets up NAT. The second one allows traffic to flow from within your network to the Internet and the last one allows SSH access to the firewall itself. </p>
+
+<h1>
+<a name="why-is-eztables-cool" class="anchor" href="#why-is-eztables-cool"><span class="octicon octicon-link"></span></a>Why is Eztables cool?</h1>
+
+<p>Eztables offers a feature found in most commercial firewalls: it allows you to work with objects or groups.
+Take a look:</p>
+
+<div class="highlight highlight-sh"><pre>    <span class="nv">HTTP_SERVICES</span><span class="o">=</span><span class="s2">"</span>
+<span class="s2">        80/tcp</span>
+<span class="s2">       443/tcp</span>
+<span class="s2">    "</span>
+
+    <span class="nv">WEB_SERVER_1</span><span class="o">=</span>192.168.0.10
+    <span class="nv">WEB_SERVER_2</span><span class="o">=</span>192.168.0.11
+
+    <span class="nv">WEB_SERVERS</span><span class="o">=</span><span class="s2">"</span>
+<span class="s2">        $WEB_SERVER_1</span>
+<span class="s2">        $WEB_SERVER_2</span>
+<span class="s2">    "</span>
+
+    allow_in any <span class="s2">"$WEB_SERVERS"</span> any <span class="s2">"$HTTP_SERVICES"</span>
+</pre></div>
+
+<p>By defining groups of hosts, networks and services, you can keep the number firewall rules very small. This way, you don't get overwhelmed with rules and there is less risk of a typo creating an insecure configuration. You stay in control because you understand your rule base with a quick glance. </p>
+
+<h1>
+<a name="features" class="anchor" href="#features"><span class="octicon octicon-link"></span></a>Features</h1>
 
 <p>Eztables is designed to be simple, yet powerful. It doesn't matter if you are setting up a home router, or use it to setup a corporate firewall. Eztables supports:</p>
 
@@ -44,7 +86,10 @@
 <li>Logging to syslog</li>
 <li>Support for plugins</li>
 <li>Automatically detects all network interfaces</li>
-</ul>
+</ul><h1>
+<a name="where-can-i-find-more-information" class="anchor" href="#where-can-i-find-more-information"><span class="octicon octicon-link"></span></a>Where can I find more information?</h1>
+
+<p>Visit the project page on github. There is a manual and some configuration examples.</p>
       </section>
     </div>
 
