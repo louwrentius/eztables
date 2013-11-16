@@ -1,5 +1,13 @@
 # Eztables Manual
 
+## Minimum required TCP/UDP services
+
+Most if not all computers need the following service to operate:
+
+- DNS (tcp/udp port 53)
+- NTP (udp port 123) (Time synchronisation)
+- HTTP(S) (tcp port 80 / 443)
+
 ## Overview of all commands
 
 - allow_in
@@ -11,6 +19,8 @@
 - port_forward
 - nat
 - allow_icmp
+
+![overview](http://louwrentius.com/static/images/eztables-rules.png)
 
 ## Debugging firewall rules
 
@@ -38,6 +48,20 @@ To prevent yourself from locking yourself out, test your firewall like this:
 ```
     /etc/init.d/eztables start && sleep 30 && /etc/init.d/eztables stop
 ```
+
+## Network address translation (NAT)
+
+Setting up NAT is trivial. If you just want to allow some computers in a network to access the internet, you don't need to specify the 'interface' option. 
+Eztables detects the internet interface automatically and if the interface is ommitted, it is assumed that this interface must be used.
+
+NAT can be used between any network, and in that case, the correct interface must be specified.
+
+    nat <network to NAT> <ip of interface> <interface>
+
+A NAT rule by itself is not sufficient. By default - due to security reasons - Ezfirewall disables communication between networks.
+A forwarding rule must be configured in order to enable internet access. 
+
+    allow_forward "$eth1_net" any any "$WEB"
 
 ## Port Forwarding
 
