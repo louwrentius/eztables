@@ -1,19 +1,35 @@
-# eztables is easy firewalling
+# Eztables: simple yet powerful firewall configuration for Linux
 
-Eztables allows you to setup a Linux firewall that is easy to understand and maintain. It uses iptables so you don't have to. 
+Eztables allows you to quickly configure a firewall without ever touching iptables. The firewall rule syntax is designed to be easy to read and to apply.  
 
-Eztables is designed to be simple, yet powerful. It doesn't matter if you are setting up a home router, or use it to setup a corporate firewall. Eztables supports:
+This is how you allow the entire internet to access your webserver on tcp-port 80:
+
+```sh
+	allow_in any $eth0 any 80/tcp
+``` 
+
+Eztables is designed to be simple, yet powerful. It doesn't matter if you want to protect your laptop, are setting up a home router, or use it to setup a corporate firewall. 
+
+# Features
 
 * Basic input / output filtering
 * Network address translation (NAT)
-* Port address translation 
-* Support for vlans
-* Service and host groups / objects
+* Port address translation (PAT)
+* Support for VLANs
+* Working with Groups / Objects to aggregate hosts and services
 * Logging to syslog
 * Support for plugins
 * Automatically detects all network interfaces
 
-## Example: home network 
+# Why should I consider using Eztables?
+
+Eztables has it's own firewall rule syntax that is significantly simpler than using iptables directly. A tool like [UFW][https://help.ubuntu.com/community/UFW] was made with a similar mindset, but it is more host-centric. It was never designed to be used as a general-purpose firewall script.
+
+Ezfirwall on the other hand, can be used on any Linux bos, wether it's a desktop, server or network firewall. 
+ 
+Ezfirewall has support for advanced features like NAT and port-forwarding. But one of the most powerfull features is support for object groups, as found in most commercial firewalls and routers. Object groups are cool because they allow you to group hosts in 'objects' and refer to those objects in your rules. This allows you to keep the number of firewall rules relatively small and comprehensible.
+
+# Example: basic network 
 
 With these two configuration lines, you can setup a functional home router. 
 
@@ -32,12 +48,29 @@ This rule will allow SSH access to this router/firewall.
 
 Note that SSH access is only granted from within the local network connected to the eth1 interface..
 
-## Using groups for hosts and services
+If you also run a DHCP-server on this box, you need to allow clients acces with these rules:
 
-A main advantage of Eztables over other solutions is the possibility to define and use groups or objects. This is a feature commonly found
-on all commercial firewall products. 
+```sh
+	allow_in any $eth1 any $DHCP" "$DHCP"
+	allow_out "$eth1" any "$DHCP" "$DHCP"
+```
 
-Working with objects and groups allows you to keep your firewall ruleset small and simple. Let's take a look at the use of objects and groups.
+The "$DHCP" variable should look like this:
+
+```sh
+	DHCP="
+	    67/udp
+	    68/udp
+	"
+```
+
+You may have to setup additional rules if you run a local DNS server or a [proxy server][http://louwrentius.com/setting-up-a-squid-proxy-with-clamav-anti-virus-using-c-icap.html]
+
+## Working with object groups
+
+A main advantage of Eztables over other solutions is the possibility to define and use groups or objects. This is a feature commonly found on all commercial firewall products. 
+
+Working with object groups allows you to keep your firewall ruleset small and simple. Let's take a look at the use of objects and groups.
 
 ```sh
     HTTP_SERVICES="
@@ -46,30 +79,21 @@ Working with objects and groups allows you to keep your firewall ruleset small a
     "
 
     WEB_SERVER_1=192.168.0.10
-    WEB_SERVER_2=192.168.0.11
+    WEB_SERVER_2=192.168.0.20
+    WEB_SERVER_3=192.168.0.30
 
     WEB_SERVERS="
         $WEB_SERVER_1
         $WEB_SERVER_2
+        $WEB_SERVER_3
     "
 
     allow_in any "$WEB_SERVERS" any "$HTTP_SERVICES"
 ```
 
-If hosts or services are added to the appropriate group, the number of firewall rules will still be the same. Actually, that's not entirely
-true: the ezfirewall configuration stays the same, only under the hood will eztables create the appropriate iptables rules.
+So object groups allow you to define firewall rules in a more abstract form, which is easy to maintain and to expand upon.
 
-## Basic syntax for configuration 
-
-This is the basic syntax for every firewall rule:
-
-```sh
-    allow_in <source host(s)> <destination host(s)> <source port(s)> <destination port(s)>
-```
-
-![overview](http://louwrentius.com/static/images/eztables-rules.png)
-
-There are also additiional commands such as allow_out, deny_in and deny_out. See the manual for more detailed instructions.
+You can even nest objects. For example, you can define an object $BASIC_SERVICES that contains the objects $DNS $HTTP_SERVICES and $NTP. 
 
 ## Installation
 
@@ -92,3 +116,4 @@ Be carefull not to lock yourself out if you test your rules.
 - Traffic shaping plugin
 - IPv6 support
 - Support for multi-homed networks
+- See the issue section for more 

@@ -1,12 +1,39 @@
 # Eztables Manual
 
+## Basic syntax for configuration 
+
+This is the basic syntax for every firewall rule:
+
+```sh
+    allow_in <source host(s)> <destination host(s)> <source port(s)> <destination port(s)>
+```
+
+![overview](http://louwrentius.com/static/images/eztables-rules.png)
+
+There are also additiional commands such as allow_out, deny_in and deny_out. See the manual for more detailed instructions.
+
+## Design 
+
+Eztables does not allow any communication between the networks it is connected to. However, if you want to allow a host to access the internet, you need to permit access to 'any' IP-address, which would include the other local networks. 
+
+This is why Eztables on startup detects all networks and generates explicit 'default deny' rules that prevent these networks from talking to each other. These default deny rules take precedence over any rule that permit access from or to any host.
+
+This is why there are two major CHAINS or rulesets: LOOSE_RULES and STRICT_RULES. Loose rules always contain an 'any' as the source or destination'. These rules are only processed AFTER the default deny rules for security reasons. 
+
+Strict rules are more specific and those rules can be used to allow traffic between hosts in different local networks. These rules are processed before the default deny rules.
+
+Understanding this design may help you to debug more elaborate firewall configurations.
+
 ## Minimum required TCP/UDP services
 
-Most if not all computers need the following service to operate:
+When setting up firewall rules, it's important to keep in mind that these services are almost always needed:
 
+- DHCP (tcp/udp port 67/68)
 - DNS (tcp/udp port 53)
-- NTP (udp port 123) (Time synchronisation)
+- NTP (udp port 123) (Time sync)
 - HTTP(S) (tcp port 80 / 443)
+
+See the [examples.md][https://github.com/louwrentius/eztables/blob/master/EXAMPLES.md] file 
 
 ## Overview of all commands
 
@@ -16,13 +43,13 @@ Most if not all computers need the following service to operate:
 - deny_out
 - allow_forward
 - deny_forward
-- port_forward
-- nat
-- allow_icmp
-
-![overview](http://louwrentius.com/static/images/eztables-rules.png)
+- port_forward (special syntax)
+- nat (special syntax)
+- allow_icmp (special syntax)
 
 ## Debugging firewall rules
+
+To debug issues you may have to read the active iptables configuration (unfortunately).
 
 If debugging is enabled, all firewall rules are echoed back to the screen. To enable debug mode:
 
@@ -71,4 +98,5 @@ The first example just forwards incoming traffic on the internet-facing firewall
 
     port_forward "$FW_EXT" "$WWW_SERVER" 80 8080
 
-## Work in progres...
+## Object groups
+
