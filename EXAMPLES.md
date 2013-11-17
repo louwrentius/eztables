@@ -205,6 +205,7 @@ In this scenario we want to setup a webserver within the DMZ. If it gets hacked,
 
 The webserver can access some services on the internet for DNS, NTP, updates, etc.
 
+- Only the IT person can access the firewall.
 - No services running on the firewall are exposed to the web server. This would allow a possible point of entry for an attacker. 
 - Ideally, you would have a separate DNS, NTP and update server within the DMZ, hardened as much as possible and the only system within the DMZ to be permitted to initiate outbound connections to the Internet.
 - eth0 = connected to internet
@@ -214,6 +215,8 @@ The webserver can access some services on the internet for DNS, NTP, updates, et
 ```sh
 
 WEBSERVER=192.168.100.10
+
+BOFHSTATION=192.168.1.50
 
 WEB="
     80/tcp
@@ -243,7 +246,7 @@ BASIC_SERVICES="
 nat $eth1_net $eth0
 allow_forward "$eth1_net" any any "$BASIC_SERVICES"
 
-allow_in $eth1_net $eth1 any "$SSH"
+allow_in $eth1_net $eth1 "$BOFHSTATION" "$SSH"
 allow_in any $eth1 "$DHCP" "$DHCP"
 
 allow_out $eth0 any any "$BASIC_SERVICES"
