@@ -65,10 +65,13 @@ nat $eth1_net $eth0
 allow_forward "$eth1_net" any any "$BASIC_SERVICES"
 
 allow_in $eth1_net $eth1 any "$SSH"
-allow_in any $eth1 "$DHCP" "$DHCP"
-
 allow_out $eth0 any any "$BASIC_SERVICES"
-allow_out $eth1_net $eth1 "$DHCP" "$DHCP"
+
+#
+# Permit DHCP 
+#
+allow_in any $eth1 "$DHCP" "$DHCP"
+allow_out $eth1 any "$DHCP" "$DHCP"
 
 ```
 
@@ -250,7 +253,7 @@ allow_in "$BOFHSTATION" $eth1 any "$SSH"
 allow_in any $eth1 "$DHCP" "$DHCP"
 
 allow_out $eth0 any any "$BASIC_SERVICES"
-allow_out $eth1_net $eth1 "$DHCP" "$DHCP"
+allow_out $eth1 any "$DHCP" "$DHCP"
 
 #
 # We permit the webserver to acces some services on the internet for operation.
