@@ -246,7 +246,7 @@ BASIC_SERVICES="
 nat $eth1_net $eth0
 allow_forward "$eth1_net" any any "$BASIC_SERVICES"
 
-allow_in $eth1_net $eth1 "$BOFHSTATION" "$SSH"
+allow_in "$BOFHSTATION" $eth1 any "$SSH"
 allow_in any $eth1 "$DHCP" "$DHCP"
 
 allow_out $eth0 any any "$BASIC_SERVICES"
