@@ -212,8 +212,6 @@ The webserver can access some services on the internet for DNS, NTP, updates, et
 
 - Ideally, you would have a separate DNS, NTP and update server within the DMZ, hardened as much as possible and the only system within the DMZ to be permitted to initiate outbound connections to the Internet.
 
-* eth0 = 
-
 - eth0 = connected to internet
 - eth1 = connected to LAN
 - eth2 = connected to DMZ
