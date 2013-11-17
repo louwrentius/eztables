@@ -6,7 +6,6 @@ Assumptions:
 
 - eth0 = connected to internet
 - eth1 = connected to home network
-
 - The Firewall itself can access the internet
 - Firewall management is only allowed from the home network (ssh)
 
@@ -26,13 +25,11 @@ allow_out $eth0 any any any
 
 - eth0 = connected to internet
 - eth1 = connected to home network
-
 - The home network only is allowed to access the most basic services:
    - HTTP(S)
    - DNS
    - NTP
-   - DHCP
-   
+   - DHCP 
 - The Firewall itself has the same restrictions for outbound traffic
 - Firewall management is only allowed from the home network (ssh)
 - Only web-based email is supported (no SMTP/POP/IMAP)
@@ -209,9 +206,7 @@ In this scenario we want to setup a webserver within the DMZ. If it gets hacked,
 The webserver can access some services on the internet for DNS, NTP, updates, etc.
 
 - No services running on the firewall are exposed to the web server. This would allow a possible point of entry for an attacker. 
-
 - Ideally, you would have a separate DNS, NTP and update server within the DMZ, hardened as much as possible and the only system within the DMZ to be permitted to initiate outbound connections to the Internet.
-
 - eth0 = connected to internet
 - eth1 = connected to LAN
 - eth2 = connected to DMZ
