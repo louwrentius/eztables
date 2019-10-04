@@ -25,10 +25,9 @@ debug () {
     fi
 }
 
-
 debug
 debug "============================"
-debug "EZTABLES firewall script $VE"
+debug "EZTABLES firewall script $VERSION"
 debug "============================"
 
 if [ -z "$EZTABLES_DEBUG" ]
@@ -60,14 +59,34 @@ is_interface_up() {
     fi 
 }
 
+cidr2mask() {
+  local i mask=""
+  local full_octets=$(($1/8))
+  local partial_octet=$(($1%8))
+
+  for ((i=0;i<4;i+=1)); do
+    if [ $i -lt $full_octets ]; then
+      mask+=255
+    elif [ $i -eq $full_octets ]; then
+      mask+=$((256 - 2**(8-$partial_octet)))
+    else
+      mask+=0
+    fi
+    test $i -lt 3 && mask+=.
+  done
+
+  echo $mask
+}
+
 get_ip () {
 
-    ifconfig $x | grep "inet addr" | cut -d ":" -f 2 | awk '{ print $1 }'
+    ip -4 ad show dev $x | grep inet | awk '{ print $2 }' | cut -d "/" -f 1
 }
 
 get_mask () {
 
-    ifconfig $x | grep -o "Mask:.*" | cut -d ":" -f 2
+    MASK=`ip -4 ad show dev $x | grep inet | awk '{ print $2 }' | cut -d "/" -f 2`
+    cidr2mask $MASK
 }
 
 get_network () {
@@ -125,7 +144,8 @@ debug
 debug "Detecting network interfaces..."
 debug
 
-for x in `ifconfig -a | grep encap | awk '{ print $1}'`
+#for x in `ifconfig -a | grep encap | awk '{ print $1}'`
+for x in `ip link | grep mtu | awk '{ print $2 }' | cut -d ":" -f 1 | cut -d "@" -f 1`
 do
     if [ "$x" == "lo" ]
     then
@@ -260,8 +280,7 @@ init_plugins () {
 }
 
 detect_internet_interface () {
-
-    netstat -rn | grep ^0.0.0.0 | grep -o -e eth[0-9]*.*[0-9]
+	netstat -rn | grep ^0.0.0.0 | grep -o -e [a-z][a-z][a-z][0-9]*.*[0-9]
 }
 
 set_default_policy () {
@@ -320,7 +339,6 @@ convert_any_to_port_range () {
     #
     # Any is shorthand for 1:65535 or all ports.
     # 
-
     PORT="$1"
     if [ "$PORT" == "any" ] || [ "$PORT" == "ANY" ]
     then
@@ -546,7 +564,6 @@ process_object_groups () {
                     then
                         SOURCE_PORT=`parse_port "$SOURCE_PORT" port`
                         DEST_PORT=`parse_port "$DEST_PORT" port`
-
                         
                         for PROTOCOL in $PROTOCOLS
                         do
@@ -573,7 +590,6 @@ process_traffic () {
 }
 
 allow_in () {
-
     process_traffic "$@" INPUT ACCEPT
 }
 
