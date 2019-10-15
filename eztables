@@ -719,14 +719,19 @@ parse_port () {
 
 lock_file () {
 
+    LOCK_FILE="/var/run/eztables.lock"
+
     ACTION=$1
     if [[ $ACTION == "create" ]]
     then
-        touch /var/run/eztables.lock
+        touch $LOCK_FILE
     fi
     if [[ $ACTION == "remove" ]]
     then
-        rm /var/run/eztables.lock
+        if [ -e $LOCK_FILE ]
+        then
+            rm $LOCK_FILE
+        fi
     fi
 }
 
