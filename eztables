@@ -717,6 +717,19 @@ parse_port () {
     echo "$RESULT"
 }
 
+lock_file () {
+
+    ACTION=$1
+    if [[ $ACTION == "create" ]]
+    then
+        touch /var/run/eztables.lock
+    fi
+    if [[ $ACTION == "remove" ]]
+    then
+        rm /var/run/eztables.lock
+    fi
+}
+
 stop_firewall () {
 
 
@@ -732,6 +745,8 @@ stop_firewall () {
     ipt-exec -P OUTPUT ACCEPT
     ipt-exec -P FORWARD DROP
     ipt-exec -F -t mangle
+
+    lock_file remove
 }
 
 check_insecure_configuration () {
@@ -755,6 +770,7 @@ check_insecure_configuration () {
 
 start_firewall () {
 
+    lock_file create
     run_checks
     stop_firewall
     init
