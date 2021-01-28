@@ -468,6 +468,7 @@ port_forward () {
     INT_IP="$2"
     EXT_PORTS="$3"
     INT_PORT="$4"
+    SOURCE="$5"
 
     for EXTERNAL_PORT in $EXT_PORTS
     do
@@ -482,7 +483,12 @@ port_forward () {
             INTERNAL_PORT=`convert_port_range_to_dash "$INTERNAL_PORT_PARSED"`
         fi
 
-        ipt-exec -t nat -A PREROUTING -p "$PROTOCOL" -d "$EXT_IP" --dport "$EXT_PORT_PARSED" -j DNAT --to "$INT_IP":"$INTERNAL_PORT"
+	if [ -z "$SOURCE" ]
+	then	
+        	ipt-exec -t nat -A PREROUTING -p "$PROTOCOL" -d "$EXT_IP" --dport "$EXT_PORT_PARSED" -j DNAT --to "$INT_IP":"$INTERNAL_PORT"
+	else
+        	ipt-exec -t nat -A PREROUTING -p "$PROTOCOL" -s "$SOURCE" -d "$EXT_IP" --dport "$EXT_PORT_PARSED" -j DNAT --to "$INT_IP":"$INTERNAL_PORT"
+	fi
 
         CONVERTED_INTERNAL_PORT=`convert_port_range_to_colon "$INTERNAL_PORT"`
         allow_forward any "$INT_IP" any "$CONVERTED_INTERNAL_PORT/$PROTOCOL"
@@ -665,7 +671,7 @@ block_everything_else () {
         ipt-exec -A FORWARD -j DROP_PACKETS
         ipt-exec -A OUTPUT -j DROP_PACKETS
 
-        ipt-exec -A DROP_PACKETS -p all -j LOG --log-prefix " * BLOCKING * " 
+        #ipt-exec -A DROP_PACKETS -p all -j LOG --log-prefix " * BLOCKING * " 
     fi
     ipt-exec -A DROP_PACKETS -j DROP
 }

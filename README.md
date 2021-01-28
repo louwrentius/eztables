@@ -1,5 +1,9 @@
 # Eztables: simple yet powerful firewall configuration for Linux
 
+<hr>
+THIS PROJECT IS ABANDONED. DO NOT USE IT.
+<hr>
+
 Eztables allows you to quickly configure a firewall without ever touching iptables. The firewall rule syntax is designed to be easy to read and to apply.  
 
 This is how you allow the entire internet to access your webserver on TCP-port 80:
@@ -112,6 +116,8 @@ Be carefull not to lock yourself out if you test your rules.
     /etc/init.d/eztables start && sleep 30 && /etc/init.d/eztables stop
 
 ## Roadmap
+
+THERE IS NONE - THIS PROJECT IS ABANDONED
 
 - Traffic shaping plugin
 - IPv6 support
